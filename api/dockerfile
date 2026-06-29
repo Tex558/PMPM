@@ -1,0 +1,24 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Instalar dependencias de compilación del sistema
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar requirements.txt primero para aprovechar la caché de capas de Docker
+COPY requirements.txt .
+
+# Instalar las librerías necesarias
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar el código del backend en un subdirectorio 'api' para mantener
+# la consistencia de los módulos (por ejemplo: import api.data.db)
+COPY . ./api/
+
+EXPOSE 8000
+
+# Iniciar el servidor Uvicorn con el módulo y app correctos
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
